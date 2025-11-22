@@ -1,0 +1,16 @@
+# OpenAI for embeddings
+openai>=1.0.0
+
+# ChromaDB for vector storage
+chromadb>=0.4.0
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# For parsing iMessage database
+# (sqlite3 is built into Python)
+
+# Utilities
+python-dotenv>=1.0.0
+tqdm>=4.65.0
