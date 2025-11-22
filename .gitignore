@@ -31,3 +31,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Python
+.venv/
+__pycache__/
+
+# Database files
+chat.db
+chat.db-shm
+chat.db-wal
+databases/
+
+# JSON files
+*.json
