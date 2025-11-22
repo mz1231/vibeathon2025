@@ -14,17 +14,22 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-lg text-[var(--text-primary)] max-w-xl mb-3">
-            Simulate conversations between profiles to discover compatibility
+            Create profiles and simulate conversations to analyze compatibility
           </p>
 
           <p className="text-sm text-[var(--text-secondary)] max-w-lg mb-10 leading-relaxed">
-            Upload your iMessage texts, create AI personas, and watch them interact in real-time with detailed compatibility insights
+            Build communication profiles, run simulated conversations between any two profiles, and get detailed compatibility insights
           </p>
 
-          <div>
-            <Link href="/profiles">
+          <div className="flex gap-3">
+            <Link href="/profile">
               <Button variant="primary" size="md">
-                Explore Profiles →
+                Create Profile →
+              </Button>
+            </Link>
+            <Link href="/profiles">
+              <Button variant="secondary" size="md">
+                Browse Profiles
               </Button>
             </Link>
           </div>
@@ -34,17 +39,17 @@ export default function LandingPage() {
         <div className="grid md:grid-cols-3 gap-10 pb-16 border-t border-[var(--border)] pt-16">
           <div className="space-y-3">
             <div className="text-xs text-[var(--text-secondary)] font-medium">01</div>
-            <h3 className="text-base font-semibold text-[var(--text-primary)]">Upload Messages</h3>
+            <h3 className="text-base font-semibold text-[var(--text-primary)]">Create Profiles</h3>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              Import your iMessage conversations to create authentic AI personas
+              Build communication profiles with names, bios, and optional message history
             </p>
           </div>
 
           <div className="space-y-3">
             <div className="text-xs text-[var(--text-secondary)] font-medium">02</div>
-            <h3 className="text-base font-semibold text-[var(--text-primary)]">Generate Conversations</h3>
+            <h3 className="text-base font-semibold text-[var(--text-primary)]">Simulate Conversations</h3>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              Watch AI versions interact based on real communication patterns
+              Select any two profiles to generate and analyze their conversation dynamics
             </p>
           </div>
 
@@ -52,7 +57,7 @@ export default function LandingPage() {
             <div className="text-xs text-[var(--text-secondary)] font-medium">03</div>
             <h3 className="text-base font-semibold text-[var(--text-primary)]">Analyze Compatibility</h3>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              Get detailed insights into communication styles and connection strength
+              Review compatibility scores and insights on communication styles
             </p>
           </div>
         </div>

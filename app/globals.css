@@ -26,8 +26,9 @@
   --foreground: #0F0F0F;
 }
 
+/* Dark mode via media query (for system preference) */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light) {
     --bg: #0A0A0A;
     --surface: #000000;
     --border: #262626;
@@ -45,6 +46,26 @@
     --background: #0A0A0A;
     --foreground: #FAFAFA;
   }
+}
+
+/* Dark mode via class (for manual toggle) */
+:root.dark {
+  --bg: #0A0A0A;
+  --surface: #000000;
+  --border: #262626;
+  --text-primary: #FAFAFA;
+  --text-secondary: #A1A1A1;
+  --sidebar-bg: #141414;
+
+  --accent: #2F6BFF;
+  --accent-hover: #1F55E6;
+
+  --success: #22C55E;
+  --error: #EF4444;
+
+  /* Legacy support */
+  --background: #0A0A0A;
+  --foreground: #FAFAFA;
 }
 
 * {
