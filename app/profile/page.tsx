@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Sidebar from '@/components/Sidebar'
 import { Button, Card, Input } from '@/components/ui'
 import { type Profile } from '@/lib/mockData'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export default function ProfileCreationPage() {
   const [profiles, setProfiles] = useState<Profile[]>([])
@@ -11,6 +13,8 @@ export default function ProfileCreationPage() {
   const [bio, setBio] = useState('')
   const [messagesJson, setMessagesJson] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Load profiles from localStorage on mount
   useEffect(() => {
@@ -25,43 +29,113 @@ export default function ProfileCreationPage() {
     localStorage.setItem('createdProfiles', JSON.stringify(newProfiles))
   }
 
-  const handleSave = () => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      try {
+        const content = event.target?.result as string
+        // Validate it's valid JSON
+        JSON.parse(content)
+        setMessagesJson(content)
+      } catch {
+        alert('Invalid JSON file')
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  const handleSave = async () => {
     if (!name.trim()) {
       alert('Please enter a name')
       return
     }
 
-    // Validate JSON if provided
+    // Validate and parse messages JSON if provided
+    let messages: string[] = []
     if (messagesJson.trim()) {
       try {
-        JSON.parse(messagesJson)
-      } catch (e) {
+        const parsed = JSON.parse(messagesJson)
+        // Handle different JSON formats
+        if (Array.isArray(parsed)) {
+          // If it's an array of strings
+          if (typeof parsed[0] === 'string') {
+            messages = parsed
+          }
+          // If it's an array of objects with text property
+          else if (typeof parsed[0] === 'object' && parsed[0].text) {
+            messages = parsed.map((m: { text: string }) => m.text)
+          }
+        }
+      } catch {
         alert('Invalid JSON format for messages')
         return
       }
     }
 
-    const newProfile: Profile = {
-      id: editingId || `profile-${Date.now()}`,
-      name: name.trim(),
-      bio: bio.trim() || undefined,
-      color: `#${Math.floor(Math.random()*16777215).toString(16)}`, // Random color
-    }
+    setIsLoading(true)
 
-    if (editingId) {
-      // Update existing
-      const updated = profiles.map(p => p.id === editingId ? newProfile : p)
-      saveProfiles(updated)
-      setEditingId(null)
-    } else {
-      // Create new
-      saveProfiles([...profiles, newProfile])
-    }
+    try {
+      // Create profile via API
+      const response = await fetch(`${API_URL}/api/profiles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          bio: bio.trim() || null,
+          messages: messages.length > 0 ? messages : null,
+        }),
+      })
 
-    // Reset form
-    setName('')
-    setBio('')
-    setMessagesJson('')
+      if (!response.ok) {
+        throw new Error('Failed to create profile')
+      }
+
+      const newProfile = await response.json()
+
+      if (editingId) {
+        // Update existing
+        const updated = profiles.map(p => p.id === editingId ? newProfile : p)
+        saveProfiles(updated)
+        setEditingId(null)
+      } else {
+        // Create new
+        saveProfiles([...profiles, newProfile])
+      }
+
+      // Reset form
+      setName('')
+      setBio('')
+      setMessagesJson('')
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error)
+      // Fallback to localStorage only
+      const newProfile: Profile = {
+        id: editingId || `profile-${Date.now()}`,
+        name: name.trim(),
+        bio: bio.trim() || undefined,
+        color: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`,
+      }
+
+      if (editingId) {
+        const updated = profiles.map(p => p.id === editingId ? newProfile : p)
+        saveProfiles(updated)
+        setEditingId(null)
+      } else {
+        saveProfiles([...profiles, newProfile])
+      }
+
+      setName('')
+      setBio('')
+      setMessagesJson('')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleEdit = (profile: Profile) => {
@@ -137,15 +211,41 @@ export default function ProfileCreationPage() {
                     <label className="block text-xs font-medium text-[var(--text-primary)] mb-2">
                       Messages (JSON Format)
                     </label>
+                    <div className="mb-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".json"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                        id="json-upload"
+                      />
+                      <label
+                        htmlFor="json-upload"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs bg-[var(--surface)] border border-[var(--border)] rounded-lg cursor-pointer hover:border-[var(--accent)] transition-colors"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="17 8 12 3 7 8" />
+                          <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        Upload JSON File
+                      </label>
+                      {messagesJson && (
+                        <span className="ml-2 text-xs text-[var(--accent)]">
+                          File loaded
+                        </span>
+                      )}
+                    </div>
                     <textarea
                       value={messagesJson}
                       onChange={(e) => setMessagesJson(e.target.value)}
-                      placeholder='[{"text": "Hey!", "sender": "profileA"}, ...]'
+                      placeholder='["Hey!", "Whats up?", "Not much, you?", ...] or paste your my_texts.json content'
                       className="w-full px-3 py-2 text-sm bg-[var(--surface)] border border-[var(--border)] rounded-lg focus:outline-none focus:border-[var(--accent)] transition-colors resize-none font-mono"
                       rows={6}
                     />
                     <div className="mt-1 text-xs text-[var(--text-secondary)]">
-                      Optional: Upload message history for better simulation
+                      Optional: Upload message history (my_texts.json) for better simulation
                     </div>
                   </div>
 
@@ -163,10 +263,10 @@ export default function ProfileCreationPage() {
                       variant="primary"
                       size="md"
                       onClick={handleSave}
-                      disabled={!name.trim()}
+                      disabled={!name.trim() || isLoading}
                       className="flex-1"
                     >
-                      {editingId ? 'Update Profile' : 'Create Profile'}
+                      {isLoading ? 'Saving...' : editingId ? 'Update Profile' : 'Create Profile'}
                     </Button>
                   </div>
                 </div>

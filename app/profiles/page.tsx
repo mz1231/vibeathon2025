@@ -6,10 +6,13 @@ import { generateMockConversation, type Profile } from "@/lib/mockData";
 import { Button, Card } from "@/components/ui";
 import Sidebar from "@/components/Sidebar";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 export default function ProfilesPage() {
   const router = useRouter();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedProfiles, setSelectedProfiles] = useState<string[]>([]);
+  const [isSimulating, setIsSimulating] = useState(false);
 
   useEffect(() => {
     // Load created profiles from localStorage
@@ -32,7 +35,7 @@ export default function ProfilesPage() {
     }
   };
 
-  const handleSimulate = () => {
+  const handleSimulate = async () => {
     if (selectedProfiles.length !== 2) {
       alert("Please select exactly 2 profiles to simulate");
       return;
@@ -41,9 +44,34 @@ export default function ProfilesPage() {
     const profileA = profiles.find((p) => p.id === selectedProfiles[0])!;
     const profileB = profiles.find((p) => p.id === selectedProfiles[1])!;
 
-    // Generate conversation between the two selected profiles
+    setIsSimulating(true);
+
+    try {
+      // Try to use API for LLM-based simulation
+      const response = await fetch(`${API_URL}/api/simulate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profile_a_id: profileA.id,
+          profile_b_id: profileB.id,
+          num_messages: 20,
+        }),
+      });
+
+      if (response.ok) {
+        const conversation = await response.json();
+        localStorage.setItem("currentConversation", JSON.stringify(conversation));
+        router.push("/replay");
+        return;
+      }
+    } catch (error) {
+      console.error('API simulation failed, falling back to mock:', error);
+    }
+
+    // Fallback to mock conversation
     const conversation = generateMockConversation(profileA, profileB);
     localStorage.setItem("currentConversation", JSON.stringify(conversation));
+    setIsSimulating(false);
     router.push("/replay");
   };
 
@@ -119,9 +147,9 @@ export default function ProfilesPage() {
                   variant="primary"
                   size="md"
                   onClick={handleSimulate}
-                  disabled={selectedProfiles.length !== 2}
+                  disabled={selectedProfiles.length !== 2 || isSimulating}
                 >
-                  Simulate Conversation →
+                  {isSimulating ? 'Generating...' : 'Simulate Conversation →'}
                 </Button>
               </div>
             </Card>
