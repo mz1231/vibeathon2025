@@ -18,7 +18,6 @@ from conversation_simulator import (
     store_user_messages,
     retrieve_similar_messages,
     format_conversation,
-    create_mock_messages,
     create_embedding,
 )
 
@@ -52,7 +51,7 @@ class DualLLMSimulator:
                 from openai import OpenAI
                 api_key = os.environ.get("OPENAI_API_KEY")
                 if api_key:
-                    self.client = OpenAI(api_key=api_key)
+                    self.client = OpenAI(api_key=api_key.strip())
                     self.chat_model = "gpt-4.1-mini"
                 else:
                     print("Warning: OPENAI_API_KEY not set.")
@@ -102,20 +101,10 @@ class DualLLMSimulator:
         profile = self.user_profiles[user_id]
 
         return f"""You are simulating how a specific person texts. You must respond EXACTLY as they would - matching their texting style perfectly.
-
-CRITICAL STYLE RULES:
-- Average message length: {profile.avg_length} characters (stay close to this!)
-- Capitalization: {profile.capitalization}
-- Punctuation style: {profile.punctuation_style}
-- Uses emojis: {'Yes' if profile.uses_emojis else 'Rarely/No'}
-- Common phrases they use: {', '.join(profile.common_phrases) if profile.common_phrases else 'N/A'}
-
 IMPORTANT:
-- Match their exact tone, energy, and vocabulary
+- REALLY match THEIR SPECIFIC tone, energy, slang, AND PERSONALITY
 - Keep responses natural and conversational
-- Don't be overly formal or verbose if their style is casual
-- Don't be too brief if their style is more detailed
-- Respond with ONLY the message text - no quotes, no "Response:", nothing extra"""
+- Respond with ONLY the message text, nothing extra"""
 
     def _build_user_prompt(
         self,
@@ -305,12 +294,11 @@ Now respond as this person would. Remember to match their style exactly."""
         profile_a = self.user_profiles[user_a_id]
 
         if self.client and self.llm_provider == "openai":
-            starter_prompt = f"""Generate a short opening text message about: {topic}
+            starter_prompt = f"""Generate a short opening text message about going out plans: {topic}
 
 Style rules:
-- Capitalization: {profile_a.capitalization}
-- Average length: {profile_a.avg_length} characters
-- Punctuation: {profile_a.punctuation_style}
+
+Make sure to EXACTLY use this person's texting style, including unique words and slang that they historically show in their text messages. Really capture their personality.
 
 Respond with ONLY the message text."""
 
@@ -360,6 +348,29 @@ Respond with ONLY the message text."""
 # DEMO / MAIN
 # ============================================================================
 
+def load_user_messages_from_json(file_path: str) -> List[Dict]:
+    """
+    Load messages from a JSON file and convert to the required format.
+
+    The JSON files contain arrays of standalone messages. We convert them
+    to context/response pairs by pairing consecutive messages.
+    """
+    with open(file_path, 'r') as f:
+        messages = json.load(f)
+
+    # Convert standalone messages to context/response format
+    formatted_messages = []
+    for i in range(1, len(messages)):
+        # Use previous message as context, current as response
+        formatted_messages.append({
+            "context": f"Them: {messages[i-1]}",
+            "response": messages[i],
+            "timestamp": f"2025-01-{(i % 28) + 1:02d}T{(i % 24):02d}:00:00"
+        })
+
+    return formatted_messages
+
+
 def main():
     """Run the dual LLM conversation simulator."""
 
@@ -371,12 +382,23 @@ def main():
     # Initialize simulator
     simulator = DualLLMSimulator(llm_provider="openai")
 
-    # Load mock data
-    mock_data = create_mock_messages()
+    # Load real user data from JSON files
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_dir = os.path.dirname(script_dir)
+
+    user_a_path = os.path.join(project_dir, "user_a.json")
+    user_b_path = os.path.join(project_dir, "user_b.json")
+
+    user_a_messages = load_user_messages_from_json(user_a_path)
+    user_b_messages = load_user_messages_from_json(user_b_path)
+
+    print(f"Loaded {len(user_a_messages)} messages for user_a")
+    print(f"Loaded {len(user_b_messages)} messages for user_b")
+    print()
 
     # Setup both users
-    simulator.setup_user("alex", mock_data["user_a"])  # Casual style
-    simulator.setup_user("jordan", mock_data["user_b"])  # Formal style
+    simulator.setup_user("Rutva", user_a_messages)
+    simulator.setup_user("Zaeem", user_b_messages)
 
     if not simulator.client:
         print("\n" + "!" * 60)
@@ -386,8 +408,8 @@ def main():
 
     # Simulate conversation
     conversation = simulator.simulate_conversation(
-        user_a_id="alex",
-        user_b_id="jordan",
+        user_a_id="Rutva",
+        user_b_id="Zaeem",
         starter_message="hey wanna hang out tonight?",
         num_exchanges=5,
         temperature=0.9
