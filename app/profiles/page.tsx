@@ -2,10 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import {
-  generateMockConversation,
-  type Profile,
-} from "@/lib/mockData";
+import { generateMockConversation, type Profile } from "@/lib/mockData";
 import { Button, Card } from "@/components/ui";
 import Sidebar from "@/components/Sidebar";
 
@@ -16,7 +13,7 @@ export default function ProfilesPage() {
 
   useEffect(() => {
     // Load created profiles from localStorage
-    const stored = localStorage.getItem('createdProfiles');
+    const stored = localStorage.getItem("createdProfiles");
     if (stored) {
       setProfiles(JSON.parse(stored));
     }
@@ -25,7 +22,7 @@ export default function ProfilesPage() {
   const handleProfileClick = (profileId: string) => {
     if (selectedProfiles.includes(profileId)) {
       // Deselect
-      setSelectedProfiles(selectedProfiles.filter(id => id !== profileId));
+      setSelectedProfiles(selectedProfiles.filter((id) => id !== profileId));
     } else if (selectedProfiles.length < 2) {
       // Select (max 2)
       setSelectedProfiles([...selectedProfiles, profileId]);
@@ -37,12 +34,12 @@ export default function ProfilesPage() {
 
   const handleSimulate = () => {
     if (selectedProfiles.length !== 2) {
-      alert('Please select exactly 2 profiles to simulate');
+      alert("Please select exactly 2 profiles to simulate");
       return;
     }
 
-    const profileA = profiles.find(p => p.id === selectedProfiles[0])!;
-    const profileB = profiles.find(p => p.id === selectedProfiles[1])!;
+    const profileA = profiles.find((p) => p.id === selectedProfiles[0])!;
+    const profileB = profiles.find((p) => p.id === selectedProfiles[1])!;
 
     // Generate conversation between the two selected profiles
     const conversation = generateMockConversation(profileA, profileB);
@@ -50,8 +47,8 @@ export default function ProfilesPage() {
     router.push("/replay");
   };
 
-  const selectedProfileA = profiles.find(p => p.id === selectedProfiles[0]);
-  const selectedProfileB = profiles.find(p => p.id === selectedProfiles[1]);
+  const selectedProfileA = profiles.find((p) => p.id === selectedProfiles[0]);
+  const selectedProfileB = profiles.find((p) => p.id === selectedProfiles[1]);
 
   return (
     <div className="flex h-screen bg-[var(--bg)]">
@@ -65,7 +62,8 @@ export default function ProfilesPage() {
               Match Compatibility Simulator
             </h1>
             <p className="text-sm text-[var(--text-secondary)]">
-              Select two profiles to simulate a conversation and analyze compatibility
+              Select two profiles to simulate a conversation and analyze
+              compatibility
             </p>
           </div>
 
@@ -91,7 +89,9 @@ export default function ProfilesPage() {
                       </span>
                     </div>
                   ) : (
-                    <span className="text-sm text-[var(--text-secondary)]">—</span>
+                    <span className="text-sm text-[var(--text-secondary)]">
+                      —
+                    </span>
                   )}
 
                   <span className="text-[var(--text-secondary)]">×</span>
@@ -109,7 +109,9 @@ export default function ProfilesPage() {
                       </span>
                     </div>
                   ) : (
-                    <span className="text-sm text-[var(--text-secondary)]">—</span>
+                    <span className="text-sm text-[var(--text-secondary)]">
+                      —
+                    </span>
                   )}
                 </div>
 
@@ -138,7 +140,7 @@ export default function ProfilesPage() {
                 <Button
                   variant="primary"
                   size="md"
-                  onClick={() => router.push('/profile')}
+                  onClick={() => router.push("/profile")}
                 >
                   Create Profile
                 </Button>
@@ -156,7 +158,7 @@ export default function ProfilesPage() {
                 <Button
                   variant="primary"
                   size="md"
-                  onClick={() => router.push('/profile')}
+                  onClick={() => router.push("/profile")}
                 >
                   Create Another Profile
                 </Button>
@@ -173,8 +175,8 @@ export default function ProfilesPage() {
                     key={profile.id}
                     className={`relative p-5 flex flex-col cursor-pointer transition-all ${
                       isSelected
-                        ? 'ring-2 ring-[var(--accent)] bg-[var(--accent)]/5'
-                        : 'hover:border-[var(--accent)]'
+                        ? "ring-2 ring-[var(--accent)] bg-[var(--accent)]/5"
+                        : "hover:border-[var(--accent)]"
                     }`}
                     onClick={() => handleProfileClick(profile.id)}
                   >
@@ -201,7 +203,7 @@ export default function ProfilesPage() {
 
                     {/* Bio snippet */}
                     <p className="text-xs text-[var(--text-secondary)] mb-4 line-clamp-2 flex-1">
-                      {profile.bio || 'No bio available'}
+                      {profile.bio || "No bio available"}
                     </p>
                   </Card>
                 );
