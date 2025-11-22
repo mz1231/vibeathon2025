@@ -41,7 +41,7 @@ export default function LandingPage() {
             <div className="text-xs text-[var(--text-secondary)] font-medium">01</div>
             <h3 className="text-base font-semibold text-[var(--text-primary)]">Create Profiles</h3>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              Build communication profiles with names, bios, and optional message history
+              Build communication profiles with names, bios, and message history
             </p>
           </div>
 

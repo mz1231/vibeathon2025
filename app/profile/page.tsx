@@ -185,7 +185,7 @@ export default function ProfileCreationPage() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-medium text-[var(--text-primary)] mb-2">
-                      Name *
+                      Name
                     </label>
                     <Input
                       value={name}
@@ -201,7 +201,7 @@ export default function ProfileCreationPage() {
                     <textarea
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
-                      placeholder="Brief description of communication style..."
+                      placeholder="Brief description of hobbies, interests, qualities..."
                       className="w-full px-3 py-2 text-sm bg-[var(--surface)] border border-[var(--border)] rounded-lg focus:outline-none focus:border-[var(--accent)] transition-colors resize-none"
                       rows={3}
                     />
@@ -245,7 +245,7 @@ export default function ProfileCreationPage() {
                       rows={6}
                     />
                     <div className="mt-1 text-xs text-[var(--text-secondary)]">
-                      Optional: Upload message history (my_texts.json) for better simulation
+                      Upload message history (my_texts.json) for better simulation
                     </div>
                   </div>
 

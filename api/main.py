@@ -242,7 +242,7 @@ def get_profiles():
 
 @app.post("/api/profiles")
 def create_profile(profile_data: ProfileCreate):
-    """Create a new profile with optional message history."""
+    """Create a new profile with message history."""
     profiles = get_profiles_db()
 
     profile_id = f"profile-{int(datetime.now().timestamp() * 1000)}"
