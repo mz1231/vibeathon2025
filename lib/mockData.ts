@@ -2,6 +2,7 @@ export interface Profile {
   id: string
   name: string
   color: string
+  bio?: string
 }
 
 export interface Message {
@@ -27,15 +28,23 @@ export interface Conversation {
   insights: Insight[]
 }
 
+// The current user (you)
+export const currentUser: Profile = {
+  id: 'user',
+  name: 'You',
+  color: '#2F6BFF'
+}
+
+// Potential matches to simulate with
 export const mockProfiles: Profile[] = [
-  { id: '1', name: 'Alex', color: '#3b82f6' },
-  { id: '2', name: 'Jordan', color: '#8b5cf6' },
-  { id: '3', name: 'Sam', color: '#ec4899' },
-  { id: '4', name: 'Riley', color: '#f59e0b' },
-  { id: '5', name: 'Casey', color: '#10b981' },
-  { id: '6', name: 'Morgan', color: '#06b6d4' },
-  { id: '7', name: 'Taylor', color: '#ef4444' },
-  { id: '8', name: 'Avery', color: '#6366f1' },
+  { id: '1', name: 'Alex', color: '#3b82f6', bio: 'Software engineer passionate about building great products. Love hiking and coffee.' },
+  { id: '2', name: 'Jordan', color: '#8b5cf6', bio: 'Designer & creative thinker. Always exploring new ideas and visual storytelling.' },
+  { id: '3', name: 'Sam', color: '#ec4899', bio: 'Entrepreneur building the future. Interested in AI, startups, and running marathons.' },
+  { id: '4', name: 'Riley', color: '#f59e0b', bio: 'Data scientist who loves music production. Finding patterns in everything.' },
+  { id: '5', name: 'Casey', color: '#10b981', bio: 'Writer and reader. Curious about psychology, philosophy, and great conversations.' },
+  { id: '6', name: 'Morgan', color: '#06b6d4', bio: 'Product manager with a passion for user experience and meaningful tech.' },
+  { id: '7', name: 'Taylor', color: '#ef4444', bio: 'Full-stack developer and gaming enthusiast. Building cool stuff in my free time.' },
+  { id: '8', name: 'Avery', color: '#6366f1', bio: 'Marketing strategist & content creator. Love traveling and trying new restaurants.' },
 ]
 
 export const generateMockConversation = (

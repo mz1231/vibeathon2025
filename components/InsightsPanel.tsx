@@ -29,7 +29,7 @@ export default function InsightsPanel({ insights }: InsightsPanelProps) {
   return (
     <div className="h-full flex flex-col">
       {/* Scroll Indicators */}
-      <div className="flex gap-1.5 mb-6 justify-center">
+      <div className="flex gap-2 mb-6 justify-center">
         {insights.map((_, index) => (
           <button
             key={index}
@@ -42,10 +42,10 @@ export default function InsightsPanel({ insights }: InsightsPanelProps) {
                 })
               }
             }}
-            className={`h-px transition-all duration-300 ${
+            className={`h-0.5 transition-all duration-300 rounded-full ${
               index === activeIndex
-                ? 'w-6 bg-black dark:bg-white'
-                : 'w-px bg-gray-300 dark:bg-gray-700'
+                ? 'w-6 bg-[var(--accent)]'
+                : 'w-1 bg-[var(--border)]'
             }`}
           />
         ))}
@@ -57,61 +57,61 @@ export default function InsightsPanel({ insights }: InsightsPanelProps) {
         className="flex-1 overflow-y-scroll snap-y snap-mandatory scroll-smooth"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {insights.map((insight, index) => (
+        {insights.map((insight) => (
           <div
             key={insight.id}
             className="h-full snap-start flex flex-col justify-center px-8"
           >
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Score Circle */}
-              <div className="flex justify-center mb-8">
-                <div className="relative w-32 h-32">
+              <div className="flex justify-center mb-6">
+                <div className="relative w-28 h-28">
                   <svg className="w-full h-full transform -rotate-90">
                     <circle
-                      cx="64"
-                      cy="64"
-                      r="58"
+                      cx="56"
+                      cy="56"
+                      r="52"
                       stroke="currentColor"
-                      strokeWidth="3"
+                      strokeWidth="1.5"
                       fill="none"
-                      className="text-gray-200 dark:text-gray-800"
+                      className="text-[var(--border)]"
                     />
                     <circle
-                      cx="64"
-                      cy="64"
-                      r="58"
+                      cx="56"
+                      cy="56"
+                      r="52"
                       stroke="currentColor"
-                      strokeWidth="3"
+                      strokeWidth="1.5"
                       fill="none"
-                      strokeDasharray={`${2 * Math.PI * 58}`}
-                      strokeDashoffset={`${2 * Math.PI * 58 * (1 - insight.score / 100)}`}
+                      strokeDasharray={`${2 * Math.PI * 52}`}
+                      strokeDashoffset={`${2 * Math.PI * 52 * (1 - insight.score / 100)}`}
                       className={`transition-all duration-1000 ${
                         insight.score >= 80
-                          ? 'text-green-500'
+                          ? 'text-[var(--success)]'
                           : insight.score >= 60
-                          ? 'text-yellow-500'
-                          : 'text-red-500'
+                          ? 'text-[var(--accent)]'
+                          : 'text-[var(--error)]'
                       }`}
                       strokeLinecap="round"
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-3xl font-semibold">{insight.score}</span>
+                    <span className="text-3xl font-semibold text-[var(--text-primary)]">{insight.score}</span>
                   </div>
                 </div>
               </div>
 
               {/* Title */}
-              <h3 className="text-lg font-semibold text-center">{insight.title}</h3>
+              <h3 className="text-base font-semibold text-center text-[var(--text-primary)]">{insight.title}</h3>
 
               {/* Description */}
-              <p className="text-center text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+              <p className="text-center text-xs text-[var(--text-secondary)] leading-relaxed">
                 {insight.description}
               </p>
 
               {/* Details */}
-              <div className="pt-6 border-t border-gray-200 dark:border-gray-800">
-                <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+              <div className="pt-4 border-t border-[var(--border)]">
+                <p className="text-xs leading-relaxed text-[var(--text-secondary)]">
                   {insight.details}
                 </p>
               </div>

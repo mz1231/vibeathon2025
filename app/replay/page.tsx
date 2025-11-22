@@ -3,14 +3,15 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ChatMessage from '@/components/ChatMessage'
-import InsightsPanel from '@/components/InsightsPanel'
+import Sidebar from '@/components/Sidebar'
 import { type Conversation, calculateProgressiveInsights } from '@/lib/mockData'
 
 export default function ReplayPage() {
   const router = useRouter()
   const [conversation, setConversation] = useState<Conversation | null>(null)
-  const [progress, setProgress] = useState(0) // Start at 0
+  const [progress, setProgress] = useState(1) // Start at 100% (1.0) to show all messages
   const [isPlaying, setIsPlaying] = useState(false)
+  const [hasStartedSimulation, setHasStartedSimulation] = useState(false)
   const [typingUser, setTypingUser] = useState<string | null>(null)
   const chatContainerRef = React.useRef<HTMLDivElement>(null)
 
@@ -18,12 +19,16 @@ export default function ReplayPage() {
     const stored = localStorage.getItem('currentConversation')
     if (stored) {
       setConversation(JSON.parse(stored))
-      // Auto-start playing when loaded
-      setTimeout(() => setIsPlaying(true), 500)
     } else {
       router.push('/profiles')
     }
   }, [router])
+
+  const handleStartSimulation = () => {
+    setProgress(0)
+    setHasStartedSimulation(true)
+    setIsPlaying(true)
+  }
 
   useEffect(() => {
     if (!isPlaying || !conversation) return
@@ -67,8 +72,11 @@ export default function ReplayPage() {
 
   if (!conversation) {
     return (
-      <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
-        <div className="text-xl font-light">Loading...</div>
+      <div className="flex h-screen bg-[var(--bg)]">
+        <Sidebar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-sm text-[var(--text-secondary)]">Loading...</div>
+        </div>
       </div>
     )
   }
@@ -76,53 +84,188 @@ export default function ReplayPage() {
   const visibleMessageCount = Math.max(1, Math.floor(conversation.messages.length * progress))
   const visibleMessages = conversation.messages.slice(0, visibleMessageCount)
   const currentInsights = calculateProgressiveInsights(conversation, progress)
+  const overallScore = currentInsights[0]?.score || 0
 
   return (
-    <main className="h-screen bg-white dark:bg-black flex flex-col">
-      {/* Header */}
-      <div className="border-b border-gray-200 dark:border-gray-800 px-8 py-3">
-        <div className="flex items-center justify-between max-w-[1600px] mx-auto">
-          <button
-            onClick={() => router.push('/profiles')}
-            className="text-xs tracking-tight hover:opacity-60 transition-opacity"
-          >
-            ← Back
-          </button>
+    <div className="flex h-screen bg-[var(--bg)]">
+      {/* Sidebar */}
+      <Sidebar />
 
-          <div className="flex items-center gap-3 text-xs tracking-tight">
-            <div className="flex items-center gap-1.5">
+      {/* Middle Panel - Score & Timeline */}
+      <div className="w-[400px] bg-[var(--surface)] border-r border-[var(--border)] flex flex-col">
+        {/* Header with profiles */}
+        <div className="px-6 py-5 border-b border-[var(--border)]">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="flex items-center gap-2 text-xs">
               <div
-                className="w-4 h-4 rounded-full flex items-center justify-center text-white"
-                style={{ backgroundColor: conversation.profileA.color, fontSize: '8px' }}
+                className="w-5 h-5 rounded-full flex items-center justify-center text-white font-medium"
+                style={{ backgroundColor: conversation.profileA.color, fontSize: '10px' }}
               >
                 {conversation.profileA.name[0]}
               </div>
-              <span>{conversation.profileA.name}</span>
+              <span className="text-[var(--text-primary)]">{conversation.profileA.name}</span>
             </div>
 
-            <span className="text-gray-400">×</span>
+            <span className="text-[var(--text-secondary)]">×</span>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2 text-xs">
               <div
-                className="w-4 h-4 rounded-full flex items-center justify-center text-white"
-                style={{ backgroundColor: conversation.profileB.color, fontSize: '8px' }}
+                className="w-5 h-5 rounded-full flex items-center justify-center text-white font-medium"
+                style={{ backgroundColor: conversation.profileB.color, fontSize: '10px' }}
               >
                 {conversation.profileB.name[0]}
               </div>
-              <span>{conversation.profileB.name}</span>
+              <span className="text-[var(--text-primary)]">{conversation.profileB.name}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Compatibility Score */}
+        <div className="px-6 py-8 border-b border-[var(--border)]">
+          <div className="bg-[var(--bg)] border border-[var(--border)] rounded-lg p-6 text-center">
+            <div className="text-4xl font-semibold text-[var(--text-primary)] mb-2">
+              {overallScore}%
+            </div>
+            <div className="text-sm text-[var(--text-primary)] font-medium mb-1">
+              Compatibility Score
+            </div>
+            <div className="text-xs text-[var(--text-secondary)]">
+              {overallScore >= 80 ? 'Strong conversational match' : overallScore >= 60 ? 'Good compatibility' : 'Moderate compatibility'}
+            </div>
+          </div>
+        </div>
+
+        {/* Timeline Simulation */}
+        <div className="flex-1 px-6 py-6">
+          <h3 className="text-xs font-semibold text-[var(--text-primary)] mb-4">
+            TIMELINE SIMULATION
+          </h3>
+
+          {/* Timeline visualization */}
+          <div className="mb-6">
+            <div className="relative h-0.5 bg-[var(--border)] rounded-full">
+              <div
+                className="absolute top-0 left-0 h-full bg-[var(--accent)] rounded-full transition-all duration-200"
+                style={{ width: `${progress * 100}%` }}
+              />
+              {conversation.messages.map((_, index) => {
+                const position = (index / (conversation.messages.length - 1)) * 100
+                const isPast = index < visibleMessageCount
+
+                return (
+                  <div
+                    key={index}
+                    className={`absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full transition-colors ${
+                      isPast ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'
+                    }`}
+                    style={{ left: `${position}%` }}
+                  />
+                )
+              })}
             </div>
           </div>
 
-          <div className="w-16" />
+          {/* Controls */}
+          <div className="space-y-4">
+            {!hasStartedSimulation ? (
+              <button
+                onClick={handleStartSimulation}
+                className="w-full px-4 py-2.5 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                ▶ Start Simulation
+              </button>
+            ) : (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className="w-8 h-8 border border-[var(--border)] rounded flex items-center justify-center hover:border-[var(--accent)] transition-colors"
+                >
+                  {isPlaying ? (
+                    <svg width="10" height="12" viewBox="0 0 12 14" fill="none" className="text-[var(--text-primary)]">
+                      <rect width="4" height="14" fill="currentColor" />
+                      <rect x="8" width="4" height="14" fill="currentColor" />
+                    </svg>
+                  ) : (
+                    <svg width="10" height="12" viewBox="0 0 12 14" fill="none" className="text-[var(--text-primary)] ml-0.5">
+                      <path d="M12 7L0 14V0L12 7Z" fill="currentColor" />
+                    </svg>
+                  )}
+                </button>
+
+                <div className="flex-1">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={progress * 100}
+                    onChange={(e) => setProgress(Number(e.target.value) / 100)}
+                    className="w-full h-0.5 bg-[var(--border)] appearance-none cursor-pointer slider rounded-full"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="text-xs text-[var(--text-secondary)]">
+              {visibleMessageCount} / {conversation.messages.length} messages
+            </div>
+          </div>
+
+          {/* Insights breakdown */}
+          <div className="mt-8 space-y-3">
+            <h3 className="text-xs font-semibold text-[var(--text-primary)]">
+              ANALYSIS BREAKDOWN
+            </h3>
+            {currentInsights.slice(0, 3).map((insight) => (
+              <div key={insight.id} className="flex items-center justify-between text-xs">
+                <span className="text-[var(--text-secondary)]">{insight.title}</span>
+                <span className="text-[var(--text-primary)] font-medium">{insight.score}%</span>
+              </div>
+            ))}
+          </div>
         </div>
+
+        <style jsx>{`
+          .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--accent);
+            cursor: pointer;
+            border-radius: 50%;
+          }
+
+          .slider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: var(--accent);
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+          }
+
+          .slider:hover::-webkit-slider-thumb {
+            background: var(--accent-hover);
+          }
+
+          .slider:hover::-moz-range-thumb {
+            background: var(--accent-hover);
+          }
+        `}</style>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Chat Area */}
-        <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-6 py-8 scroll-smooth dotted-background">
-          <div className="max-w-3xl mx-auto space-y-4 py-4">
-            {visibleMessages.map((message, index) => (
+      {/* Right Panel - Chat Transcript */}
+      <div className="flex-1 flex flex-col bg-[var(--bg)]">
+        {/* Header */}
+        <div className="px-8 py-5 border-b border-[var(--border)] bg-[var(--surface)]">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+            Chat Transcript
+          </h2>
+        </div>
+
+        {/* Messages */}
+        <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-8 py-6">
+          <div className="max-w-2xl">
+            {visibleMessages.map((message) => (
               <ChatMessage
                 key={message.id}
                 message={message}
@@ -137,32 +280,32 @@ export default function ReplayPage() {
 
             {/* Typing Indicator */}
             {typingUser && (
-              <div className={`flex items-start gap-3 ${typingUser === conversation.profileA.id ? 'justify-end' : 'justify-start'} animate-fadeIn`}>
+              <div className={`flex items-start gap-2.5 mb-4 animate-fadeIn ${typingUser === conversation.profileA.id ? 'justify-end' : 'justify-start'}`}>
                 {typingUser !== conversation.profileA.id && (
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 text-sm font-medium"
-                    style={{ backgroundColor: conversation.profileB.color }}
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-white flex-shrink-0 mt-0.5 font-medium"
+                    style={{ backgroundColor: conversation.profileB.color, fontSize: '11px' }}
                   >
                     {conversation.profileB.name[0]}
                   </div>
                 )}
 
-                <div className={`px-5 py-3 rounded-3xl ${
+                <div className={`px-3.5 py-2.5 rounded-lg border ${
                   typingUser === conversation.profileA.id
-                    ? 'bg-blue-500 shadow-sm'
-                    : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-sm'
+                    ? 'bg-[#F3F7FF] dark:bg-[#1a2332] border-[#e3edff] dark:border-[#2a3a52]'
+                    : 'bg-[var(--surface)] border-[var(--border)]'
                 }`}>
                   <div className="flex gap-1.5 items-center">
-                    <div className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)] animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)] animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-secondary)] animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 </div>
 
                 {typingUser === conversation.profileA.id && (
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 text-sm font-medium"
-                    style={{ backgroundColor: conversation.profileA.color }}
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-white flex-shrink-0 mt-0.5 font-medium"
+                    style={{ backgroundColor: conversation.profileA.color, fontSize: '11px' }}
                   >
                     {conversation.profileA.name[0]}
                   </div>
@@ -171,106 +314,7 @@ export default function ReplayPage() {
             )}
           </div>
         </div>
-
-        {/* Insights Panel */}
-        <div className="w-[380px] border-l border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
-          <div className="h-full py-8">
-            <h2 className="text-base font-semibold text-center mb-8 px-6">Insights</h2>
-            <InsightsPanel insights={currentInsights} />
-          </div>
-        </div>
       </div>
-
-      {/* Timeline Slider */}
-      <div className="border-t border-gray-200 dark:border-gray-800 px-6 py-5 bg-white dark:bg-black">
-        <div className="max-w-[1600px] mx-auto">
-          <div className="flex items-center gap-6">
-            {/* Play/Pause Button */}
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="w-10 h-10 rounded-lg border border-gray-200 dark:border-gray-800 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors flex-shrink-0"
-            >
-              {isPlaying ? (
-                <svg
-                  width="12"
-                  height="14"
-                  viewBox="0 0 12 14"
-                  fill="none"
-                  className="text-black dark:text-white"
-                >
-                  <rect width="4" height="14" fill="currentColor" />
-                  <rect x="8" width="4" height="14" fill="currentColor" />
-                </svg>
-              ) : (
-                <svg
-                  width="12"
-                  height="14"
-                  viewBox="0 0 12 14"
-                  fill="none"
-                  className="text-black dark:text-white ml-0.5"
-                >
-                  <path d="M12 7L0 14V0L12 7Z" fill="currentColor" />
-                </svg>
-              )}
-            </button>
-
-            {/* Progress Info */}
-            <div className="text-sm text-gray-500 dark:text-gray-500 w-28 flex-shrink-0">
-              {visibleMessageCount} / {conversation.messages.length}
-            </div>
-
-            {/* Slider */}
-            <div className="flex-1 relative">
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={progress * 100}
-                onChange={(e) => setProgress(Number(e.target.value) / 100)}
-                className="w-full h-1 bg-gray-200 dark:bg-gray-800 appearance-none cursor-pointer slider rounded-full"
-              />
-            </div>
-
-            {/* Overall Score */}
-            <div className="text-right w-24 flex-shrink-0">
-              <div className="text-2xl font-semibold">{currentInsights[0]?.score || 0}%</div>
-              <div className="text-xs text-gray-500 dark:text-gray-500">
-                Compatibility
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <style jsx>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          width: 16px;
-          height: 16px;
-          background: black;
-          cursor: pointer;
-          border-radius: 0;
-        }
-
-        .slider::-moz-range-thumb {
-          width: 16px;
-          height: 16px;
-          background: black;
-          cursor: pointer;
-          border-radius: 0;
-          border: none;
-        }
-
-        @media (prefers-color-scheme: dark) {
-          .slider::-webkit-slider-thumb {
-            background: white;
-          }
-
-          .slider::-moz-range-thumb {
-            background: white;
-          }
-        }
-      `}</style>
-    </main>
+    </div>
   )
 }

@@ -1,54 +1,93 @@
 @import "tailwindcss";
 
 @theme {
-  --font-family-sans: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
-  --font-family-serif: 'Georgia', serif;
-  --font-family-mono: 'Roboto Mono', monospace;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
 
-  --color-background: 255 255 255;
-  --color-foreground: 10 10 10;
+:root {
+  /* Linear/Notion Color System */
+  --bg: #FAFAFA;
+  --surface: #FFFFFF;
+  --border: #E5E5E5;
+  --text-primary: #0F0F0F;
+  --text-secondary: #6A6A6A;
+  --sidebar-bg: #F7F7F7;
+
+  /* Accent */
+  --accent: #2F6BFF;
+  --accent-hover: #1F55E6;
+
+  /* Status */
+  --success: #22C55E;
+  --error: #EF4444;
+
+  /* Legacy support */
+  --background: #FAFAFA;
+  --foreground: #0F0F0F;
 }
 
 @media (prefers-color-scheme: dark) {
-  @theme {
-    --color-background: 10 10 10;
-    --color-foreground: 250 250 250;
+  :root {
+    --bg: #0A0A0A;
+    --surface: #000000;
+    --border: #262626;
+    --text-primary: #FAFAFA;
+    --text-secondary: #A1A1A1;
+    --sidebar-bg: #141414;
+
+    --accent: #2F6BFF;
+    --accent-hover: #1F55E6;
+
+    --success: #22C55E;
+    --error: #EF4444;
+
+    /* Legacy support */
+    --background: #0A0A0A;
+    --foreground: #FAFAFA;
   }
 }
 
 * {
-  border-color: rgb(229 231 235);
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  * {
-    border-color: rgb(31 41 55);
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background-color: rgb(var(--color-background));
-  color: rgb(var(--color-foreground));
-  font-family: var(--font-family-sans);
+  color: var(--text-primary);
+  background: var(--bg);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-.dotted-background {
-  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
-  background-size: 20px 20px;
+/* Typography Scale */
+h1 {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
-@media (prefers-color-scheme: dark) {
-  .dotted-background {
-    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-  }
+h2 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
+/* Smooth transitions */
+button, a, input {
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+
+/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
@@ -56,14 +95,14 @@ body {
   }
 }
 
-@keyframes scaleIn {
+@keyframes slideUp {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -89,12 +128,23 @@ body {
   }
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.4s ease-out forwards;
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-.animate-scaleIn {
-  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s ease-out;
 }
 
 .animate-slideInLeft {
@@ -103,4 +153,38 @@ body {
 
 .animate-slideInRight {
   animation: slideInRight 0.3s ease-out forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.dotted-background {
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .dotted-background {
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  }
 }
