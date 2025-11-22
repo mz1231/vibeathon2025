@@ -10,6 +10,13 @@ import json
 import numpy as np
 from typing import List, Dict, Optional
 from dataclasses import dataclass
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load .env file from project root
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(env_path)
 
 from conversation_simulator import (
     UserProfile,
@@ -52,7 +59,7 @@ class DualLLMSimulator:
                 api_key = os.environ.get("OPENAI_API_KEY")
                 if api_key:
                     self.client = OpenAI(api_key=api_key.strip())
-                    self.chat_model = "gpt-4.1-mini"
+                    self.chat_model = "gpt-4o-mini"
                 else:
                     print("Warning: OPENAI_API_KEY not set.")
                     print("Set it with: export OPENAI_API_KEY='your-key'")

@@ -7,9 +7,16 @@ Provides endpoints for profile management and conversation simulation.
 import json
 import os
 import random
+import sys
 from datetime import datetime, timedelta
 from typing import Optional
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load .env file
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(env_path)
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +26,15 @@ try:
     from openai import OpenAI
 except ImportError:
     OpenAI = None
+
+# Add llm_usage to path for importing DualLLMSimulator
+sys.path.insert(0, str(Path(__file__).parent.parent / "llm_usage"))
+try:
+    from dual_llm_simulator import DualLLMSimulator, load_user_messages_from_json
+    DUAL_LLM_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Could not import DualLLMSimulator: {e}")
+    DUAL_LLM_AVAILABLE = False
 
 app = FastAPI(title="Vibe Check API", version="1.0.0")
 
@@ -287,7 +303,7 @@ def upload_messages(profile_id: str, messages: list[str]):
 
 @app.post("/api/simulate", response_model=ConversationResponse)
 def simulate_conversation(request: SimulationRequest):
-    """Simulate a conversation between two profiles using LLM."""
+    """Simulate a conversation between two profiles using DualLLMSimulator with RAG."""
     profiles = get_profiles_db()
 
     if request.profile_a_id not in profiles:
@@ -304,10 +320,50 @@ def simulate_conversation(request: SimulationRequest):
 
     # Check if we have OpenAI API key and messages
     api_key = os.environ.get("OPENAI_API_KEY")
-    use_llm = api_key and OpenAI and messages_a and messages_b
+    use_dual_llm = DUAL_LLM_AVAILABLE and api_key and messages_a and messages_b
 
-    if use_llm:
-        # Use LLM to generate conversation
+    if use_dual_llm:
+        # Use DualLLMSimulator with RAG for better conversation generation
+        simulator = DualLLMSimulator(llm_provider="openai")
+
+        # Convert messages to context/response format for the simulator
+        def convert_to_context_response(msgs):
+            formatted = []
+            for i in range(1, len(msgs)):
+                formatted.append({
+                    "context": f"Them: {msgs[i-1]}",
+                    "response": msgs[i],
+                    "timestamp": f"2025-01-{(i % 28) + 1:02d}T{(i % 24):02d}:00:00"
+                })
+            return formatted
+
+        # Setup users in the simulator
+        simulator.setup_user(profile_a['name'], convert_to_context_response(messages_a))
+        simulator.setup_user(profile_b['name'], convert_to_context_response(messages_b))
+
+        # Generate conversation using the simulator
+        num_exchanges = request.num_messages // 2
+        conversation_raw = simulator.simulate_conversation(
+            user_a_id=profile_a['name'],
+            user_b_id=profile_b['name'],
+            starter_message="hey what's up?",
+            num_exchanges=num_exchanges,
+            temperature=0.9,
+            verbose=False
+        )
+
+        # Convert to Message format
+        messages = [
+            Message(
+                id=f"m{i+1}",
+                senderId=profile_a['id'] if msg['sender'] == profile_a['name'] else profile_b['id'],
+                text=msg['text'],
+                timestamp=i+1
+            )
+            for i, msg in enumerate(conversation_raw)
+        ]
+    elif api_key and OpenAI and messages_a and messages_b:
+        # Fallback to simple LLM generation without RAG
         client = OpenAI(api_key=api_key)
         persona_a = create_persona_prompt(messages_a, profile_a['name'])
         persona_b = create_persona_prompt(messages_b, profile_b['name'])
