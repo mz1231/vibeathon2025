@@ -7,9 +7,7 @@ Extracts messages from the macOS iMessage database and exports to JSON.
 import sqlite3
 import json
 import os
-import shutil
 from datetime import datetime
-from pathlib import Path
 from typing import Optional
 
 
@@ -17,55 +15,23 @@ class iMessageExtractor:
     # Apple's timestamp epoch (2001-01-01) offset from Unix epoch
     APPLE_EPOCH_OFFSET = 978307200
 
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(self, db_path: str = "./chat.db"):
         """
         Initialize the extractor.
 
         Args:
-            db_path: Path to chat.db. If None, copies from default location.
+            db_path: Path to chat.db file. Defaults to ./chat.db
         """
-        if db_path is None:
-            # Check if local backup already exists
-            local_backup = "./imessage_backup.db"
+        if not os.path.exists(db_path):
+            raise FileNotFoundError(
+                f"Database not found at {db_path}. "
+                "Please place your chat.db file in the project directory."
+            )
 
-            if os.path.exists(local_backup):
-                print(f"Using existing local backup: {local_backup}")
-                self.db_path = local_backup
-            elif os.path.exists("./chat.db"):
-                print("Using manually copied chat.db in current directory")
-                self.db_path = "./chat.db"
-            else:
-                # Try to copy from default location
-                source_db = os.path.expanduser("~/Library/Messages/chat.db")
-                self.db_path = local_backup
-
-                if not os.path.exists(source_db):
-                    raise FileNotFoundError(
-                        f"iMessage database not found at {source_db}. "
-                        "Make sure you have Full Disk Access enabled."
-                    )
-
-                try:
-                    print(f"Copying database from {source_db}...")
-                    shutil.copy2(source_db, self.db_path)
-                    print(f"Database copied to {self.db_path}")
-                except PermissionError:
-                    raise PermissionError(
-                        "Cannot access iMessage database. Please either:\n"
-                        "1. Grant Full Disk Access to Terminal/VS Code in System Settings → Privacy & Security\n"
-                        "   Then restart your terminal.\n"
-                        "OR\n"
-                        "2. Manually copy the database:\n"
-                        "   - Open Finder, press Cmd+Shift+G\n"
-                        "   - Go to: ~/Library/Messages/\n"
-                        "   - Copy 'chat.db' to your project folder\n"
-                        "   - Run this script again"
-                    )
-        else:
-            self.db_path = db_path
-
+        self.db_path = db_path
         self.conn = sqlite3.connect(self.db_path)
         self.conn.row_factory = sqlite3.Row
+        print(f"Connected to database: {self.db_path}")
 
     def _convert_apple_timestamp(self, timestamp: int) -> str:
         """Convert Apple's timestamp to ISO format string."""
