@@ -8,30 +8,32 @@ interface ChatMessageProps {
 
 export default function ChatMessage({ message, profile, isUser }: ChatMessageProps) {
   return (
-    <div className={`flex items-start gap-2 mb-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div
+      className={`flex items-start gap-3 ${isUser ? 'justify-end' : 'justify-start'} ${isUser ? 'animate-slideInRight' : 'animate-slideInLeft'}`}
+    >
       {!isUser && (
         <div
-          className="w-5 h-5 rounded-full flex items-center justify-center text-white flex-shrink-0 mt-0.5"
-          style={{ backgroundColor: profile.color, fontSize: '10px' }}
+          className="w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 text-sm font-medium shadow-sm"
+          style={{ backgroundColor: profile.color }}
         >
           {profile.name[0]}
         </div>
       )}
 
       <div
-        className={`max-w-[70%] px-3 py-2 rounded-2xl ${
+        className={`max-w-[65%] px-5 py-3 rounded-3xl ${
           isUser
-            ? 'bg-blue-500 text-white'
-            : 'bg-gray-100 dark:bg-gray-900 text-black dark:text-white'
+            ? 'bg-blue-500 text-white shadow-sm'
+            : 'bg-white dark:bg-gray-900 text-black dark:text-white border border-gray-200 dark:border-gray-700 shadow-sm'
         }`}
       >
-        <p className="text-xs leading-relaxed tracking-tight">{message.text}</p>
+        <p className="text-[15px] leading-[1.6]">{message.text}</p>
       </div>
 
       {isUser && (
         <div
-          className="w-5 h-5 rounded-full flex items-center justify-center text-white flex-shrink-0 mt-0.5"
-          style={{ backgroundColor: profile.color, fontSize: '10px' }}
+          className="w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 text-sm font-medium shadow-sm"
+          style={{ backgroundColor: profile.color }}
         >
           {profile.name[0]}
         </div>

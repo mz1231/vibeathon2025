@@ -62,29 +62,29 @@ export default function InsightsPanel({ insights }: InsightsPanelProps) {
             key={insight.id}
             className="h-full snap-start flex flex-col justify-center px-8"
           >
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Score Circle */}
-              <div className="flex justify-center mb-6">
-                <div className="relative w-24 h-24">
+              <div className="flex justify-center mb-8">
+                <div className="relative w-32 h-32">
                   <svg className="w-full h-full transform -rotate-90">
                     <circle
-                      cx="48"
-                      cy="48"
-                      r="44"
+                      cx="64"
+                      cy="64"
+                      r="58"
                       stroke="currentColor"
-                      strokeWidth="2"
+                      strokeWidth="3"
                       fill="none"
                       className="text-gray-200 dark:text-gray-800"
                     />
                     <circle
-                      cx="48"
-                      cy="48"
-                      r="44"
+                      cx="64"
+                      cy="64"
+                      r="58"
                       stroke="currentColor"
-                      strokeWidth="2"
+                      strokeWidth="3"
                       fill="none"
-                      strokeDasharray={`${2 * Math.PI * 44}`}
-                      strokeDashoffset={`${2 * Math.PI * 44 * (1 - insight.score / 100)}`}
+                      strokeDasharray={`${2 * Math.PI * 58}`}
+                      strokeDashoffset={`${2 * Math.PI * 58 * (1 - insight.score / 100)}`}
                       className={`transition-all duration-1000 ${
                         insight.score >= 80
                           ? 'text-green-500'
@@ -96,22 +96,22 @@ export default function InsightsPanel({ insights }: InsightsPanelProps) {
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-medium tracking-tight">{insight.score}</span>
+                    <span className="text-3xl font-semibold">{insight.score}</span>
                   </div>
                 </div>
               </div>
 
               {/* Title */}
-              <h3 className="text-base font-medium text-center tracking-tight">{insight.title}</h3>
+              <h3 className="text-lg font-semibold text-center">{insight.title}</h3>
 
               {/* Description */}
-              <p className="text-center text-xs text-gray-600 dark:text-gray-400 tracking-tight">
+              <p className="text-center text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                 {insight.description}
               </p>
 
               {/* Details */}
-              <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
-                <p className="text-xs leading-relaxed tracking-tight text-gray-600 dark:text-gray-400">
+              <div className="pt-6 border-t border-gray-200 dark:border-gray-800">
+                <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                   {insight.details}
                 </p>
               </div>
