@@ -53,32 +53,72 @@ class iMessageExtractor:
             return None
 
         try:
-            # The text is embedded in the binary blob
-            # Look for the NSString content between specific markers
-            text = attributed_body.decode('utf-8', errors='ignore')
+            # The attributedBody is a binary plist with NSAttributedString
+            # The actual text appears after "NSString" followed by a length byte and the text
 
-            # Try to find text between common patterns
-            # Pattern 1: After "NSString" marker
-            if 'NSString' in text:
-                # Extract readable text, filtering out control characters
-                readable = re.sub(r'[^\x20-\x7E\n\r\t]', '', text)
-                # Clean up and get the main content
-                lines = [l.strip() for l in readable.split('\n') if l.strip() and len(l.strip()) > 1]
-                if lines:
-                    # Usually the actual message is one of the longer strings
-                    return max(lines, key=len) if lines else None
+            # Method 1: Find text after NSString marker
+            nsstring_marker = b'NSString'
+            if nsstring_marker in attributed_body:
+                idx = attributed_body.find(nsstring_marker)
+                # Skip past marker and look for the text
+                after_marker = attributed_body[idx + len(nsstring_marker):]
 
-            # Pattern 2: Try to extract directly
-            # Remove null bytes and control characters
-            cleaned = re.sub(rb'[\x00-\x1f\x7f-\x9f]', b' ', attributed_body)
-            decoded = cleaned.decode('utf-8', errors='ignore').strip()
+                # The text usually appears within the next ~100 bytes
+                # Look for printable ASCII sequences
+                decoded = after_marker[:500].decode('utf-8', errors='ignore')
 
-            # Find the longest sequence of printable characters
-            matches = re.findall(r'[\x20-\x7E]{2,}', decoded)
+                # Remove control characters but keep the structure
+                cleaned = re.sub(r'[^\x20-\x7E]', '\x00', decoded)
+
+                # Split by null bytes and find meaningful text
+                parts = [p.strip() for p in cleaned.split('\x00') if p.strip()]
+
+                # Filter out metadata keywords
+                metadata_keywords = [
+                    'nsstring', 'nsattributed', 'nsmutable', 'nsobject',
+                    'nsdictionary', 'nsnumber', 'nsvalue', 'nsdata',
+                    '__kimmessagepartattributename', 'streamtyped',
+                    '__kimlinkattributename', '__kimlinkisrichlinkattributename',
+                    '__kimmessage', '__kimfile', '__kimballoon'
+                ]
+
+                # Find the actual message content
+                for part in parts:
+                    lower_part = part.lower()
+                    # Skip if it's metadata
+                    if any(kw in lower_part for kw in metadata_keywords):
+                        continue
+                    # Skip very short strings or strings that look like type names
+                    if len(part) < 2:
+                        continue
+                    if part[0] in '+@' or part.startswith('i'):
+                        continue
+                    # This is likely the actual message
+                    return part
+
+            # Method 2: Fallback - try to find any readable text
+            decoded = attributed_body.decode('utf-8', errors='ignore')
+            # Find sequences of printable characters
+            matches = re.findall(r'[\x20-\x7E]{3,}', decoded)
+
             if matches:
-                # Filter out metadata-like strings
-                content = [m for m in matches if not any(x in m.lower() for x in ['nsstring', 'nsattributed', 'nsmutable', '__kIMMessagePartAttributeName'])]
+                # Filter out metadata
+                metadata_keywords = [
+                    'nsstring', 'nsattributed', 'nsmutable', 'nsobject',
+                    'nsdictionary', 'nsnumber', 'nsvalue', 'streamtyped',
+                    '__kimmessagepartattributename', '__kimlinkattributename',
+                    '__kimlinkisrichlinkattributename', '__kimmessage',
+                    '__kimfile', '__kimballoon'
+                ]
+                content = [
+                    m for m in matches
+                    if not any(kw in m.lower() for kw in metadata_keywords)
+                    and not m.startswith('+')
+                    and not m.startswith('@')
+                    and len(m) >= 2
+                ]
                 if content:
+                    # Return the longest non-metadata string
                     return max(content, key=len)
 
             return None
