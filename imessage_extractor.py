@@ -7,6 +7,7 @@ Extracts messages from the macOS iMessage database and exports to JSON.
 import sqlite3
 import json
 import os
+import re
 from datetime import datetime
 from typing import Optional
 
@@ -15,7 +16,7 @@ class iMessageExtractor:
     # Apple's timestamp epoch (2001-01-01) offset from Unix epoch
     APPLE_EPOCH_OFFSET = 978307200
 
-    def __init__(self, db_path: str = "./chat.db"):
+    def __init__(self, db_path: str = "./databases/chat.db"):
         """
         Initialize the extractor.
 
@@ -29,7 +30,8 @@ class iMessageExtractor:
             )
 
         self.db_path = db_path
-        self.conn = sqlite3.connect(self.db_path)
+        # Open in read-only mode to prevent creating WAL files
+        self.conn = sqlite3.connect(f"file:{self.db_path}?mode=ro", uri=True)
         self.conn.row_factory = sqlite3.Row
         print(f"Connected to database: {self.db_path}")
 
@@ -44,6 +46,44 @@ class iMessageExtractor:
 
         unix_timestamp = timestamp + self.APPLE_EPOCH_OFFSET
         return datetime.fromtimestamp(unix_timestamp).isoformat()
+
+    def _extract_text_from_attributed_body(self, attributed_body: bytes) -> str:
+        """Extract plain text from attributedBody blob (used in newer macOS)."""
+        if not attributed_body:
+            return None
+
+        try:
+            # The text is embedded in the binary blob
+            # Look for the NSString content between specific markers
+            text = attributed_body.decode('utf-8', errors='ignore')
+
+            # Try to find text between common patterns
+            # Pattern 1: After "NSString" marker
+            if 'NSString' in text:
+                # Extract readable text, filtering out control characters
+                readable = re.sub(r'[^\x20-\x7E\n\r\t]', '', text)
+                # Clean up and get the main content
+                lines = [l.strip() for l in readable.split('\n') if l.strip() and len(l.strip()) > 1]
+                if lines:
+                    # Usually the actual message is one of the longer strings
+                    return max(lines, key=len) if lines else None
+
+            # Pattern 2: Try to extract directly
+            # Remove null bytes and control characters
+            cleaned = re.sub(rb'[\x00-\x1f\x7f-\x9f]', b' ', attributed_body)
+            decoded = cleaned.decode('utf-8', errors='ignore').strip()
+
+            # Find the longest sequence of printable characters
+            matches = re.findall(r'[\x20-\x7E]{2,}', decoded)
+            if matches:
+                # Filter out metadata-like strings
+                content = [m for m in matches if not any(x in m.lower() for x in ['nsstring', 'nsattributed', 'nsmutable', '__kIMMessagePartAttributeName'])]
+                if content:
+                    return max(content, key=len)
+
+            return None
+        except Exception:
+            return None
 
     def get_all_contacts(self) -> list[dict]:
         """Get all contacts/handles from the database."""
@@ -247,6 +287,7 @@ class iMessageExtractor:
             SELECT
                 m.ROWID as message_id,
                 m.text,
+                m.attributedBody,
                 m.is_from_me,
                 m.date,
                 m.date_delivered,
@@ -261,8 +302,7 @@ class iMessageExtractor:
             LEFT JOIN chat_message_join cmj ON m.ROWID = cmj.message_id
             LEFT JOIN chat c ON cmj.chat_id = c.ROWID
             WHERE m.is_from_me = 1
-              AND m.text IS NOT NULL
-              AND m.text != ''
+              AND (m.text IS NOT NULL OR m.attributedBody IS NOT NULL)
               AND m.associated_message_type = 0
         """
 
@@ -286,9 +326,18 @@ class iMessageExtractor:
 
         messages = []
         for row in cursor.fetchall():
+            # Try text first, fall back to attributedBody
+            text = row["text"]
+            if not text and row["attributedBody"]:
+                text = self._extract_text_from_attributed_body(row["attributedBody"])
+
+            # Skip if no text could be extracted
+            if not text:
+                continue
+
             messages.append({
                 "message_id": row["message_id"],
-                "text": row["text"],
+                "text": text,
                 "timestamp": self._convert_apple_timestamp(row["date"]),
                 "date_delivered": self._convert_apple_timestamp(row["date_delivered"]),
                 "service": row["service"],

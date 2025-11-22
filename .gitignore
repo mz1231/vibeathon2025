@@ -1,3 +1,7 @@
 .venv/
 chat.db
+chat.db-shm
+chat.db-wal
 __pycache__/
+*.json
+databases/
